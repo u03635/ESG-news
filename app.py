@@ -9,7 +9,7 @@ app = Flask(__name__)
 GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 # 使用快速且免費額度高的 Gemini 1.5 Flash 模型
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 def search_latest_news(query, max_results=3):
     """免費的即時搜尋工具，用來抓取最新法規新聞"""
