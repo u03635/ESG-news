@@ -9,26 +9,8 @@ app = Flask(__name__)
 GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# ==========================================
-# 【自動除錯機制】：動態取得目前帳號支援的模型
-# 解決 404 Not Found 的問題
-# ==========================================
-def init_model():
-    try:
-        # 根據系統錯誤提示，呼叫 list_models() 來找出帳號目前可用的模型
-        for m in genai.list_models():
-            # 確保該模型支援 'generateContent' (文字生成)
-            if 'generateContent' in m.supported_generation_methods:
-                print(f"✅ 成功載入並使用模型：{m.name}")
-                return genai.GenerativeModel(m.name)
-        raise Exception("找不到支援文字生成的模型。")
-    except Exception as e:
-        print(f"⚠️ 自動尋找模型失敗，使用備用方案。錯誤：{e}")
-        # 強制加上 'models/' 前綴的保底方案
-        return genai.GenerativeModel('models/gemini-1.5-flash')
-
-# 初始化 AI 模型
-model = init_model()
+# 根據 Google 最新官方錯誤提示，直接指定使用支援新用戶的最新模型
+model = genai.GenerativeModel('models/gemini-3.6-flash')
 
 def search_latest_news(query, max_results=3):
     """免費的即時搜尋工具，用來抓取最新法規新聞"""
