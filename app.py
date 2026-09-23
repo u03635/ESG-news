@@ -42,22 +42,22 @@ def index():
 
 @app.route('/topic', methods=['POST'])
 def topic():
-    """處理【即時法規與新制快報】"""
+    """處理左側 3 個專題按鈕點擊事件"""
     topic_name = request.json.get("topic", "")
     
     if topic_name == "即時法規與新制快報":
-        # 抓取較多筆數 (15筆) 且限縮近一年的新聞，確保 AI 有足夠素材篩選出「近 6 個月」的 10 則
+        # 將抓取筆數提高至 20 筆，確保 12 個月內有足夠的新聞素材供 AI 篩選
         search_query = "台灣 BERS 建築能效評估 綠建築標章 新制 法規"
-        search_context, sources_md = search_latest_news_with_sources(search_query, max_results=15, timelimit='y')
+        search_context, sources_md = search_latest_news_with_sources(search_query, max_results=20, timelimit='y')
 
         prompt = f"""
         你是一位台灣 ESG 建築能效與綠建築法規專家。
         請根據下列「最新即時搜尋資料」，專門整理【即時法規與新制快報】。
         
         【嚴格執行要求】：
-        1. 僅篩選「近 6 個月內」的動態與資料。
+        1. 僅篩選「近 12 個月內」的動態與資料。
         2. 請統整產出 10 則資訊（以條列式呈現）。
-        3. 若近半年內符合條件的資訊不足 10 則，【有幾則就顯示幾則】，絕對不要無中生有湊數。
+        3. 若半年內或近 12 個月內符合條件的資訊不足 10 則，【有幾則就顯示幾則】，絕對不要無中生有湊數。
         4. 每則資訊請給予清晰的標題，並簡明扼要說明重點。
         
         【最新搜尋參考資料】：
