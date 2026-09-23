@@ -277,13 +277,19 @@
                 document.getElementById(thinkingId).remove();
 
                 if (data.error) {
-                    appendMessage('bot', `<span class="text-danger">系統錯誤：${data.error}</span>`);
+                    // 根據後端回傳的特定錯誤碼，顯示對應的文字
+                    if (data.error === "QUOTA_EXCEEDED") {
+                        appendMessage('bot', `<span class="text-danger">免費額度用完</span>`);
+                    } else {
+                        appendMessage('bot', `<span class="text-danger">連線失敗</span>`);
+                    }
                 } else {
                     appendMessage('bot', marked.parse(data.response));
                 }
             } catch (e) {
                 document.getElementById(thinkingId).remove();
-                appendMessage('bot', `<span class="text-danger">連線失敗，請檢查網路狀況。</span>`);
+                // 處理網路斷線、伺服器超時等無法解析 JSON 的情況
+                appendMessage('bot', `<span class="text-danger">連線失敗</span>`);
             }
         }
 
