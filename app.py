@@ -1,29 +1,25 @@
 import os
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
+from google import genai  # <-- 改用全新 Google GenAI SDK
 from duckduckgo_search import DDGS
 
 app = Flask(__name__)
 
-# 設定 Gemini API Key
+# 初始化設定最新版 Gemini Client
 GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=GOOGLE_API_KEY)
-
-model = genai.GenerativeModel('models/gemini-3.6-flash')
+client = genai.Client(api_key=GOOGLE_API_KEY)
 
 def handle_api_error(e):
     """統一解析 API 錯誤，區分免費額度用完與一般連線失敗"""
     err_str = str(e).lower()
-    # 若錯誤訊息包含 429、quota 或 exhausted，代表免費額度用完或請求過於頻繁
     if "429" in err_str or "quota" in err_str or "exhausted" in err_str:
         return jsonify({"error": "QUOTA_EXCEEDED"})
     else:
         return jsonify({"error": "CONNECTION_FAILED"})
-        
+
 def search_latest_news_with_sources(query, max_results=10, timelimit=None):
     """即時搜尋，支援時間範圍過濾，並自動彙整可點選的來源超連結"""
     try:
-        # 參數 timelimit='y' 代表抓取過去一年內的資料（幫助模型從中篩選半年內）
         results = list(DDGS().text(query, region='tw-tz', safesearch='off', timelimit=timelimit, max_results=max_results))
         context = ""
         sources_markdown = "\n\n---\n### 🔗 參考資料與最新來源連結\n"
@@ -51,11 +47,9 @@ def index():
 
 @app.route('/topic', methods=['POST'])
 def topic():
-    """處理左側 3 個專題按鈕點擊事件"""
     topic_name = request.json.get("topic", "")
     
     if topic_name == "即時法規與新制快報":
-        # 將抓取筆數提高至 20 筆，確保 12 個月內有足夠的新聞素材供 AI 篩選
         search_query = "台灣 BERS 建築能效評估 綠建築標章 新制 法規"
         search_context, sources_md = search_latest_news_with_sources(search_query, max_results=20, timelimit='y')
 
@@ -73,7 +67,11 @@ def topic():
         {search_context}
         """
         try:
-            response = model.generate_content(prompt)
+            # <-- 使用新版 SDK 的生成語法
+            response = client.models.generate_content(
+                model='gemini-3.6-flash',
+                contents=prompt
+            )
             full_reply = response.text + sources_md
             return jsonify({"response": full_reply})
         except Exception as e:
@@ -81,9 +79,7 @@ def topic():
 
 @app.route('/analyze_diff', methods=['POST'])
 def analyze_diff():
-    """處理【新舊法規差異分析】(當使用者輸入法規名稱後觸發)"""
     regulation_name = request.json.get("regulation", "")
-    
     search_query = f"台灣 {regulation_name} 新舊法規差異 新制 影響"
     search_context, sources_md = search_latest_news_with_sources(search_query, max_results=8)
     
@@ -100,7 +96,10 @@ def analyze_diff():
     {search_context}
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=prompt
+        )
         full_reply = response.text + sources_md
         return jsonify({"response": full_reply})
     except Exception as e:
@@ -108,7 +107,6 @@ def analyze_diff():
 
 @app.route('/query', methods=['POST'])
 def query():
-    """處理使用者一般問答"""
     user_input = request.json.get("message", "")
     search_context, sources_md = search_latest_news_with_sources(f"台灣 建築能效 綠建築 {user_input}", max_results=5)
     
@@ -117,7 +115,10 @@ def query():
     【最新搜尋參考資料】：\n{search_context}
     """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=prompt
+        )
         full_reply = response.text + sources_md
         return jsonify({"response": full_reply})
     except Exception as e:
