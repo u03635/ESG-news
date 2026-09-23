@@ -9,35 +9,62 @@
     <!-- Markdown 解析庫 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
+        /* 深色模式色彩系統設計 */
+        :root {
+            --bg-layer-0: #121212; /* 第 0 層：最底層背景 */
+            --bg-layer-1: #1E1E1E; /* 第 1 層：卡片 / 容器 */
+            --bg-layer-2: #2C2C2C; /* 第 2 層：互動元素 / 對話框 */
+            --bg-layer-3: #383838; /* 第 3 層：懸停狀態 / 最上層 */
+            
+            --text-primary: rgba(255, 255, 255, 0.87);   /* 主要文字 */
+            --text-secondary: rgba(255, 255, 255, 0.60); /* 次要文字 */
+            --text-disabled: rgba(255, 255, 255, 0.38);  /* 停用文字 */
+            
+            --accent-color: #81C784; /* 降飽和度的柔和綠色 (強調色) */
+            --accent-hover: #A5D6A7;
+            --accent-dark: #388E3C;  /* 用於按鈕或使用者對話框底色 */
+        }
+
         body { 
-            background-color: #f4f7f6; 
+            background-color: var(--bg-layer-0); 
+            color: var(--text-primary);
+            /* 依據深色模式特性，調降字重至 350 / 400 避免光暈效應 */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-weight: 350; 
             margin: 0;
             padding: 0;
         }
+
         /* 頂部標題列與右上警語 */
         .top-navbar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e0e6ed;
+            background-color: var(--bg-layer-1);
+            border-bottom: 1px solid var(--bg-layer-2);
             padding: 12px 24px;
         }
+        .navbar-title {
+            color: var(--accent-color);
+            font-weight: 500;
+        }
         .warning-badge {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background-color: rgba(255, 213, 79, 0.15); /* 柔和黃色背景 */
+            color: #FFD54F; /* 降飽和黃色文字 */
+            border: 1px solid rgba(255, 213, 79, 0.3);
             border-radius: 6px;
             padding: 6px 12px;
             font-size: 0.85rem;
             display: inline-block;
         }
-        /* 左側功能選單 */
-        .sidebar-card {
-            background: #ffffff;
+
+        /* 左右兩側卡片 */
+        .sidebar-card, .main-card {
+            background: var(--bg-layer-1);
             border-radius: 10px;
-            border: 1px solid #dbe2ea;
+            border: 1px solid var(--bg-layer-2);
             padding: 18px;
             height: calc(100vh - 100px);
         }
+        
+        /* 左側功能選單 */
         .btn-topic {
             display: block;
             width: 100%;
@@ -45,119 +72,138 @@
             padding: 12px 16px;
             margin-bottom: 12px;
             font-size: 0.95rem;
-            font-weight: 500;
+            font-weight: 400;
             border-radius: 8px;
             transition: all 0.2s ease;
-            border: 1px solid #c3e6cb;
-            background-color: #f8fbf9;
-            color: #155724;
+            border: 1px solid var(--bg-layer-3);
+            background-color: var(--bg-layer-2);
+            color: var(--text-primary);
         }
         .btn-topic:hover {
-            background-color: #2b9348;
-            color: #ffffff;
-            border-color: #2b9348;
+            background-color: var(--bg-layer-3);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
             transform: translateY(-1px);
         }
-        /* 右側主顯示區域（對應藍框，全螢幕放大） */
+
+        /* 右側主顯示區域 */
         .main-card {
-            background: #ffffff;
-            border-radius: 10px;
-            border: 1px solid #dbe2ea;
-            padding: 18px;
-            height: calc(100vh - 100px);
             display: flex;
             flex-direction: column;
         }
         .content-box {
             flex-grow: 1;
             overflow-y: auto;
-            background: #ffffff;
+            background: var(--bg-layer-1);
             padding: 15px;
             border-radius: 8px;
-            border: 1px solid #edf2f7;
         }
+        
+        /* 對話氣泡設計 */
         .msg-bot {
-            background-color: #f8f9fa;
-            border-left: 4px solid #2b9348;
+            background-color: var(--bg-layer-2);
+            border-left: 4px solid var(--accent-color);
             padding: 16px 20px;
             border-radius: 6px;
-            color: #2d3748;
+            color: var(--text-primary);
             line-height: 1.65;
             margin-bottom: 15px;
+            font-weight: 350;
         }
         .msg-user {
-            background-color: #2b9348;
-            color: white;
+            background-color: var(--accent-dark);
+            color: var(--text-primary);
             padding: 10px 18px;
             border-radius: 20px;
             margin-bottom: 15px;
             display: inline-block;
             float: right;
             clear: both;
+            font-weight: 400;
         }
+
+        /* 輔助文字色彩設定 */
+        .text-secondary-custom { color: var(--text-secondary) !important; }
+        
         /* 資料來源超連結樣式 */
         .content-box a {
-            color: #1e7e34;
+            color: var(--accent-color);
             text-decoration: underline;
-            font-weight: 500;
+            font-weight: 400;
         }
         .content-box a:hover {
-            color: #155724;
+            color: var(--accent-hover);
+        }
+
+        /* 輸入框與發送按鈕 */
+        input.form-control {
+            background-color: var(--bg-layer-2);
+            border: 1px solid var(--bg-layer-3);
+            color: var(--text-primary);
+        }
+        input.form-control::placeholder {
+            color: var(--text-disabled);
+        }
+        input.form-control:focus {
+            background-color: var(--bg-layer-2);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+            box-shadow: none;
+        }
+        .btn-send {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: var(--bg-layer-0); /* 確保與按鈕底色達高對比 */
+            font-weight: 500;
+        }
+        .btn-send:hover {
+            background-color: var(--accent-hover);
+            border-color: var(--accent-hover);
+            color: var(--bg-layer-0);
         }
         .clearfix::after { content: ""; clear: both; display: table; }
     </style>
 </head>
 <body>
-    <!-- 頂部導覽列：標題 + 右上角警語 -->
+    <!-- 頂部導覽列 -->
     <div class="top-navbar d-flex justify-content-between align-items-center">
-        <h4 class="m-0 text-success fw-bold">🏢 ESG NEWS 小幫手</h4>
+        <h4 class="m-0 navbar-title">🏢 ESG NEWS 小幫手</h4>
         <div class="warning-badge">
-            ⚠️ <strong>貼心提醒：</strong>AI 整理資訊僅供參考，正式法規與標章規定請以主管機關最新公告為準。
+            ⚠️ <strong>貼心提醒：</strong>AI 整理資訊可能存在誤差，正式法規與標章細節請以主管機關最新公告為準。
         </div>
     </div>
 
-    <!-- 寬版工作區：左側紅框選單 + 右側藍框內容區 -->
     <div class="container-fluid px-4 py-3">
         <div class="row g-3">
-            <!-- 左側按鈕選單 (原左側紅框) -->
+            <!-- 左側按鈕選單 -->
             <div class="col-md-3 col-lg-3">
                 <div class="sidebar-card">
-                    <h6 class="text-secondary fw-bold mb-3">📌 法規專題快速分析</h6>
-                    <button class="btn btn-topic" onclick="requestTopic('即時法規與新制快報')">
-                        📢 即時法規與新制快報
-                    </button>
-                    <button class="btn btn-topic" onclick="requestTopic('新舊法規差異分析')">
-                        ⚖️ 新舊法規差異分析
-                    </button>
-                    <button class="btn btn-topic" onclick="requestTopic('產業影響評估')">
-                        🏢 產業影響評估
-                    </button>
+                    <h6 class="text-secondary-custom fw-bold mb-3">📌 法規專題快速分析</h6>
+                    <button class="btn btn-topic" onclick="requestTopic('即時法規與新制快報')">📢 即時法規與新制快報</button>
+                    <button class="btn btn-topic" onclick="requestTopic('新舊法規差異分析')">⚖️ 新舊法規差異分析</button>
+                    <button class="btn btn-topic" onclick="requestTopic('產業影響評估-開發中')">🏢 產業影響評估-開發中</button>
 
-                    <hr class="my-4 text-muted">
-                    <div class="text-muted small">
-                        <strong>使用說明：</strong><br>
-                        點選上方主題，小幫手將即時連網檢索最新 BERS 建築能效與綠建築法規資料，並附上最新新聞與公告來源連結。
+                    <hr class="my-4 border-secondary">
+                    <div class="text-secondary-custom small">
+                        <strong>操作說明：</strong><br>
+                        選擇上方專題，系統將連網檢索最新資訊並產出報告。所有報告末端皆附帶原始資料超連結。
                     </div>
                 </div>
             </div>
 
-            <!-- 右側大型顯示區 (原藍框放大區域) -->
+            <!-- 右側主顯示區 -->
             <div class="col-md-9 col-lg-9">
                 <div class="main-card">
                     <div class="content-box mb-3 clearfix" id="chatBox">
-                        <!-- 預設歡迎畫面 (不再自動搜尋) -->
                         <div class="msg-bot">
-                            <h5 class="text-success fw-bold">👋 歡迎使用 ESG NEWS 小幫手！</h5>
-                            <p class="mb-1">請從<strong>左側點選您想查閱的主題</strong>進行深度分析，或在下方輸入框直接發問。</p>
-                            <span class="badge bg-light text-secondary border">支援即時連網搜尋</span>
-                            <span class="badge bg-light text-secondary border">附帶原始法規超連結</span>
+                            <h5 style="color: var(--accent-color); font-weight: 500;">👋 歡迎使用 ESG NEWS 小幫手！</h5>
+                            <p class="mb-1 text-secondary-custom">請從<strong>左側點選您想查閱的主題</strong>，或在下方直接輸入查詢內容。</p>
                         </div>
                     </div>
 
-                    <!-- 下方輸入框 -->
                     <div class="input-group">
-                        <input type="text" id="userInput" class="form-control" placeholder="輸入你想特別查詢的建築能效/綠建築法規細節..." onkeydown="if(event.key==='Enter') sendMessage()">
-                        <button class="btn btn-success px-4" onclick="sendMessage()">查詢與分析</button>
+                        <input type="text" id="userInput" class="form-control" placeholder="輸入法規名稱或詢問相關細節..." onkeydown="if(event.key==='Enter') sendMessage()">
+                        <button class="btn btn-send px-4" onclick="sendMessage()">送出</button>
                     </div>
                 </div>
             </div>
@@ -166,39 +212,34 @@
 
     <script>
         const chatBox = document.getElementById('chatBox');
+        let currentMode = 'normal'; // 用於追蹤當前對話狀態
 
-        // 設定 marked.js：讓所有產出的連結都在「新分頁開啟」
+        // 設定 marked.js 連結開新分頁
         const renderer = new marked.Renderer();
         renderer.link = function(href, title, text) {
             return `<a target="_blank" rel="noopener noreferrer" href="${href}" title="${title || ''}">${text}</a>`;
         };
         marked.setOptions({ renderer: renderer });
 
-        // 點選左側 3 個專題按鈕觸發
+        // 點選左側按鈕邏輯
         async function requestTopic(topicName) {
-            appendMessage('user', `請整理分析：【${topicName}】`);
+            if (topicName === '產業影響評估-開發中') {
+                appendMessage('user', `請分析：【${topicName}】`);
+                appendMessage('bot', `功能開發中，敬請期待。`);
+                return;
+            }
 
-            const thinkingId = 'thinking-' + Date.now();
-            chatBox.innerHTML += `<div id="${thinkingId}" class="msg-bot"><div class="spinner-border text-success spinner-border-sm"></div><span class="ms-2">正連網檢索最新資訊並整理「${topicName}」中，請稍候...</span></div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            if (topicName === '新舊法規差異分析') {
+                appendMessage('user', `請執行：【${topicName}】`);
+                appendMessage('bot', `請問您想分析什麼法規？<br><span style="color: var(--accent-color);">👉 請在下方輸入欄位填入「法規名稱」並送出。</span>`);
+                currentMode = 'waiting_for_regulation'; // 進入等待法規名稱模式
+                document.getElementById('userInput').focus();
+                return;
+            }
 
-            try {
-                const response = await fetch('/topic', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic: topicName })
-                });
-                const data = await response.json();
-                document.getElementById(thinkingId).remove();
-
-                if (data.error) {
-                    appendMessage('bot', `<span class="text-danger">系統錯誤：${data.error}</span>`);
-                } else {
-                    appendMessage('bot', marked.parse(data.response));
-                }
-            } catch (e) {
-                document.getElementById(thinkingId).remove();
-                appendMessage('bot', `<span class="text-danger">連線失敗，請檢查網路狀況。</span>`);
+            if (topicName === '即時法規與新制快報') {
+                appendMessage('user', `請整理分析：【${topicName}】`);
+                await fetchAndDisplay('/topic', { topic: topicName }, `檢索近 6 個月最新法規動態中，請稍候...`);
             }
         }
 
@@ -211,15 +252,26 @@
             appendMessage('user', message);
             input.value = '';
 
+            // 判斷目前系統狀態，若在等待法規名稱，則呼叫專屬路由
+            if (currentMode === 'waiting_for_regulation') {
+                currentMode = 'normal'; // 恢復一般模式
+                await fetchAndDisplay('/analyze_diff', { regulation: message }, `正在分析法規「${message}」的新舊差異，請稍候...`);
+            } else {
+                await fetchAndDisplay('/query', { message: message }, `檢索即時資料並分析中...`);
+            }
+        }
+
+        // 共通的 API 呼叫與渲染函數
+        async function fetchAndDisplay(endpoint, payload, loadingText) {
             const thinkingId = 'thinking-' + Date.now();
-            chatBox.innerHTML += `<div id="${thinkingId}" class="msg-bot"><div class="spinner-border text-success spinner-border-sm"></div><span class="ms-2">檢索即時資料並分析中...</span></div>`;
+            chatBox.innerHTML += `<div id="${thinkingId}" class="msg-bot"><div class="spinner-border spinner-border-sm" style="color: var(--accent-color);"></div><span class="ms-2">${loadingText}</span></div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                const response = await fetch('/query', {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify(payload)
                 });
                 const data = await response.json();
                 document.getElementById(thinkingId).remove();
@@ -231,7 +283,7 @@
                 }
             } catch (e) {
                 document.getElementById(thinkingId).remove();
-                appendMessage('bot', `<span class="text-danger">連線失敗</span>`);
+                appendMessage('bot', `<span class="text-danger">連線失敗，請檢查網路狀況。</span>`);
             }
         }
 
