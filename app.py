@@ -11,6 +11,15 @@ genai.configure(api_key=GOOGLE_API_KEY)
 
 model = genai.GenerativeModel('models/gemini-3.6-flash')
 
+def handle_api_error(e):
+    """統一解析 API 錯誤，區分免費額度用完與一般連線失敗"""
+    err_str = str(e).lower()
+    # 若錯誤訊息包含 429、quota 或 exhausted，代表免費額度用完或請求過於頻繁
+    if "429" in err_str or "quota" in err_str or "exhausted" in err_str:
+        return jsonify({"error": "QUOTA_EXCEEDED"})
+    else:
+        return jsonify({"error": "CONNECTION_FAILED"})
+        
 def search_latest_news_with_sources(query, max_results=10, timelimit=None):
     """即時搜尋，支援時間範圍過濾，並自動彙整可點選的來源超連結"""
     try:
@@ -68,7 +77,7 @@ def topic():
             full_reply = response.text + sources_md
             return jsonify({"response": full_reply})
         except Exception as e:
-            return jsonify({"error": str(e)})
+            return handle_api_error(e)
 
 @app.route('/analyze_diff', methods=['POST'])
 def analyze_diff():
@@ -95,7 +104,7 @@ def analyze_diff():
         full_reply = response.text + sources_md
         return jsonify({"response": full_reply})
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return handle_api_error(e)
 
 @app.route('/query', methods=['POST'])
 def query():
@@ -112,7 +121,7 @@ def query():
         full_reply = response.text + sources_md
         return jsonify({"response": full_reply})
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return handle_api_error(e)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
