@@ -212,16 +212,10 @@
 
     <script>
         const chatBox = document.getElementById('chatBox');
-        let currentMode = 'normal'; // 用於追蹤當前對話狀態
+        let currentMode = 'normal';
 
-        // 設定 marked.js 連結開新分頁
-        const renderer = new marked.Renderer();
-        renderer.link = function(href, title, text) {
-            return `<a target="_blank" rel="noopener noreferrer" href="${href}" title="${title || ''}">${text}</a>`;
-        };
-        marked.setOptions({ renderer: renderer });
+        // 移除舊版 marked.js 容易出錯的自訂設定，改用最穩定的 DOM 轉換法
 
-        // 點選左側按鈕邏輯
         async function requestTopic(topicName) {
             if (topicName === '產業影響評估-開發中') {
                 appendMessage('user', `請分析：【${topicName}】`);
@@ -232,7 +226,7 @@
             if (topicName === '新舊法規差異分析') {
                 appendMessage('user', `請執行：【${topicName}】`);
                 appendMessage('bot', `請問您想分析什麼法規？<br><span style="color: var(--accent-color);">👉 請在下方輸入欄位填入「法規名稱」並送出。</span>`);
-                currentMode = 'waiting_for_regulation'; // 進入等待法規名稱模式
+                currentMode = 'waiting_for_regulation'; 
                 document.getElementById('userInput').focus();
                 return;
             }
@@ -243,7 +237,6 @@
             }
         }
 
-        // 下方輸入框手動查詢
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const message = input.value.trim();
@@ -252,16 +245,14 @@
             appendMessage('user', message);
             input.value = '';
 
-            // 判斷目前系統狀態，若在等待法規名稱，則呼叫專屬路由
             if (currentMode === 'waiting_for_regulation') {
-                currentMode = 'normal'; // 恢復一般模式
+                currentMode = 'normal';
                 await fetchAndDisplay('/analyze_diff', { regulation: message }, `正在分析法規「${message}」的新舊差異，請稍候...`);
             } else {
                 await fetchAndDisplay('/query', { message: message }, `檢索即時資料並分析中...`);
             }
         }
 
-        // 共通的 API 呼叫與渲染函數
         async function fetchAndDisplay(endpoint, payload, loadingText) {
             const thinkingId = 'thinking-' + Date.now();
             chatBox.innerHTML += `<div id="${thinkingId}" class="msg-bot"><div class="spinner-border spinner-border-sm" style="color: var(--accent-color);"></div><span class="ms-2">${loadingText}</span></div>`;
@@ -277,18 +268,28 @@
                 document.getElementById(thinkingId).remove();
 
                 if (data.error) {
-                    // 根據後端回傳的特定錯誤碼，顯示對應的文字
                     if (data.error === "QUOTA_EXCEEDED") {
                         appendMessage('bot', `<span class="text-danger">免費額度用完</span>`);
                     } else {
                         appendMessage('bot', `<span class="text-danger">連線失敗</span>`);
                     }
                 } else {
-                    appendMessage('bot', marked.parse(data.response));
+                    // 【關鍵修復點】：先用原生工具解析，再用瀏覽器原生的 DOM 替所有超連結加上新分頁開啟屬性
+                    let rawHtml = marked.parse(data.response);
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = rawHtml;
+                    
+                    const links = tempDiv.querySelectorAll('a');
+                    links.forEach(link => {
+                        link.setAttribute('target', '_blank');
+                        link.setAttribute('rel', 'noopener noreferrer');
+                    });
+
+                    appendMessage('bot', tempDiv.innerHTML);
                 }
             } catch (e) {
                 document.getElementById(thinkingId).remove();
-                // 處理網路斷線、伺服器超時等無法解析 JSON 的情況
                 appendMessage('bot', `<span class="text-danger">連線失敗</span>`);
             }
         }
