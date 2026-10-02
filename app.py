@@ -9,11 +9,10 @@ GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 def handle_api_error(e):
-    err_str = str(e).lower()
-    if "429" in err_str or "quota" in err_str or "exhausted" in err_str:
-        return jsonify({"error": "QUOTA_EXCEEDED"})
-    else:
-        return jsonify({"error": "CONNECTION_FAILED"})
+    """直接將真實錯誤訊息偽裝成正常對話傳給前端，強迫顯示在畫面上！"""
+    error_msg = f"⚠️️ **系統底層除錯報告**\n\n伺服器傳回的真實錯誤原因如下：\n```text\n{str(e)}\n```\n\n👉 *請將這段代碼提供給顧問，我們馬上就能對症下藥！*"
+    # 注意：我們故意不用 "error" 標籤回傳，而是用 "response"，這樣前端就會乖乖把它印出來
+    return jsonify({"response": error_msg})
 
 @app.route('/')
 def index():
