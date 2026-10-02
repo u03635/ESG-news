@@ -1,4 +1,5 @@
 import os
+import datetime
 from flask import Flask, render_template, request, jsonify
 from google import genai
 from tavily import TavilyClient
@@ -9,10 +10,12 @@ app = Flask(__name__)
 GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY")
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
 
+# 初始化 AI 與搜尋引擎客戶端
 client = genai.Client(api_key=GOOGLE_API_KEY)
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY) if TAVILY_API_KEY else None
 
 def handle_api_error(e):
+    """統一解析 API 錯誤，區分免費額度用完與一般連線失敗"""
     err_str = str(e).lower()
     if "429" in err_str or "quota" in err_str or "exhausted" in err_str:
         return jsonify({"error": "QUOTA_EXCEEDED"})
@@ -52,20 +55,29 @@ def index():
 def topic():
     topic_name = request.json.get("topic", "")
     
+    # 動態獲取系統當下真實時間與年份，打破 AI 時間幻覺
+    now = datetime.datetime.now()
+    current_date = now.strftime("%Y年%m月%d日")
+    current_year = now.year
+    previous_year = current_year - 1
+    
     if topic_name == "即時法規與新制快報":
-        # 放寬年份限制，讓 Tavily 自己用自然語言理解能力去找最新資料
-        search_query = "台灣 BERS 建築能效評估 綠建築標章 2026 最新法規 新制"
+        # 讓搜尋關鍵字自動帶入「去年」與「今年」
+        search_query = f"台灣 BERS 建築能效評估 綠建築標章 {previous_year} {current_year} 最新法規 新制"
         search_context = search_with_tavily(search_query, max_results=10)
 
         prompt = f"""
         你是一位台灣 ESG 建築能效與綠建築法規專家。
-        請專門整理【即時法規與新制快報】。
+        ⚠️ 【系統時間校準】：請注意，今天是真實世界的 {current_date}。
         
-        【嚴格執行要求】：
-        1. 僅篩選下方資料中「近 12 個月內」的動態。
-        2. 請統整產出最多 10 則資訊（以條列式呈現）。若資訊不足 10 則，有幾則就顯示幾則，絕對不要無中生有。
-        3. 每一則資訊請給予清晰的標題，並簡明扼要說明重點。
-        4. 【最重要】：請務必在每一則整理資訊的最後面，利用 Markdown 語法附上對應的資料來源超連結，格式為：`[👉 點此查看資料來源](真實網址)`。
+        請根據下方【最新搜尋資料】，專門整理【即時法規與新制快報】。
+        
+        【彈性與高智商整理要求】：
+        1. 精準收錄：請優先採用 {previous_year} 與 {current_year} 年的最新資訊。
+        2. 嚴禁死板過濾：只要判斷該資料對目前台灣 ESG 與 BERS 法規推動有實質參考價值，請直接納入整理。絕對不可因為「日期看起來像未來」、「時間戳記疑似異常」或「略早於 12 個月」就將有效新聞盲目刪除。
+        3. 請統整產出最多 10 則資訊（以條列式呈現）。若資訊不足 10 則，有幾則就顯示幾則，嚴禁無中生有。
+        4. 每一則資訊請給予清晰的標題，並簡明扼要說明重點。
+        5. 【最重要】：請務必在每一則整理資訊的最後面，利用 Markdown 語法附上對應的資料來源超連結，格式為：`[👉 點此查看資料來源](真實網址)`。
         
         【最新搜尋資料】：
         {search_context}
