@@ -15,12 +15,11 @@ client = genai.Client(api_key=GOOGLE_API_KEY)
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY) if TAVILY_API_KEY else None
 
 def handle_api_error(e):
-    """統一解析 API 錯誤，區分免費額度用完與一般連線失敗"""
-    err_str = str(e).lower()
-    if "429" in err_str or "quota" in err_str or "exhausted" in err_str:
-        return jsonify({"error": "QUOTA_EXCEEDED"})
-    else:
-        return jsonify({"error": "CONNECTION_FAILED"})
+    """直接將真實錯誤訊息偽裝成正常內容，強迫印在網頁前端"""
+    error_msg = f"⚠ **系統底層除錯報告**\n\n伺服器傳回的真實錯誤原因如下：\n```text\n{str(e)}\n```\n\n👉 *請將這段畫面截圖，我們馬上就能抓出元凶！*"
+    
+    # 故意將 error 放進 response 標籤中，讓網頁乖乖印出來
+    return jsonify({"response": error_msg})
 
 def search_with_tavily(query, max_results=8):
     """使用 Tavily API 進行專為 AI 打造的深度搜尋"""
